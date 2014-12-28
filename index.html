@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pl_PL">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Bin Operations</title>
+
+	<!-- Bootstrap -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+
+	<!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+	<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+      <![endif]-->
+  </head>
+  <body>
+
+  	<div class="container">
+  		<div class="row">
+  			<div class="col-md-6">
+  				<input class="btn btn-primary form-control" type="text" name="base10" id="base10"  size="18" oninput="convert()">
+  			</div>
+  			<div class="col-md-6">
+  				<input type="text" class="btn btn-primary form-control" name="base102" id="base102"  size="18" oninput="convert()">
+  			</div>
+  		</div>
+  		<div class="row">
+  			<div class="col-md-5">
+  				<input type="text" class="btn btn-default form-control col-md-6" name="base2" id="base2"  size="16" oninput="convert()" maxlength="10" disabled>
+  				<input type="text" class="btn btn-default form-control floating col-md-6" size="16" disabled>
+  			</div>
+  			<div class="col-md-2">
+  				<select type="text" class="btn btn-warning form-control" id="operation">
+  					<option id="" selected>Działanie</option>
+  					<option id="+">+</option>
+  					<option id="-">-</option>
+  					<option id="*">*</option>
+  					<option id="/">/</option>
+  				</select>
+  			</div>
+  			<div class="col-md-5">
+  				<input type="text" class="btn btn-default form-control col-md-6" name="base22" id="base22"  size="16" oninput="convert()" disabled>
+  				<input type="text" class="btn btn-default form-control floating col-md-6" size="16" disabled>
+  			</div>
+  		</div>
+  		<div class="row">
+  			<div class="col-md-12">
+  				<label class="btn btn-success form-control" type="text" id="dec_wynik" disabled></label>
+  			</div>
+  			<div class="col-md-12">
+  				<label class="btn btn-success form-control" type="text" id="bin_wynik" disabled></label>
+  			</div>
+  		</div>
+  	</div>
+
+
+  	<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+  	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+  	<!-- Include all compiled plugins (below), or include individual files as needed -->
+  	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+
+  	<script>
+
+  		document.getElementById("base10").value = "11";
+  		document.getElementById("base102").value = "11";
+  		convert();
+
+  		var bin1;
+  		var bin2;
+  		var dec1;
+  		var dec2;
+
+  		function convert(){
+  			dec1 = parseFloat(document.getElementById("base10").value);
+  			dec2 = parseFloat(document.getElementById("base102").value);
+  			bin1 = dec2Bin(dec1);
+  			bin2 = dec2Bin(dec2);
+
+  			document.getElementById("base2").value = bin1;
+  			document.getElementById("base22").value = bin2;
+
+  		}
+  		function normalize(first, second){
+  			var tmp1 = first.toString(2);
+  			var tmp2 = second.toString(2);
+
+  			var size;
+
+  			if(tmp1.length>=tmp2.length){
+  				size = tmp1.length;
+  				var zerosN = Math.abs(tmp1.length-tmp2.length);
+  				for (var i = 0; i < zerosN; i++) {
+  					tmp2 = "0"+tmp2;
+  				};
+  			} else {
+  				size = tmp2.length;
+  				var zerosN = Math.abs(tmp1.length-tmp2.length);
+  				for (var i = 0; i < zerosN; i++) {
+  					tmp1 = "0"+tmp1;
+  				};
+  			}
+  			var Binaries = { size: size, first: tmp1, second: tmp2 };
+  			return Binaries;
+  		}
+
+  		/* 
+  			Działania arytmetyczne 
+  			*/
+  			function addition(){
+  				var Binaries = normalize(bin1,bin2);
+
+  				var score = "";
+  				var memory = [];
+  				for (var i = 0; i < Binaries.size+1; i++) {
+  					memory[i]="0";		
+  				};
+
+  				for (var i = Binaries.size-1; i >= 0; i--) {
+  					if((Binaries.first[i]=="1" && Binaries.second[i]=="1")){
+  						memory[i]="1";
+  						score = "0"+score;
+  					} else if((Binaries.first[i]=="1" && Binaries.second[i]=="0")||(Binaries.first[i]=="0" && Binaries.second[i]=="1")){
+  						score = "1"+score;
+  					} else if(Binaries.first[i]=="0" && Binaries.second[i]=="0"){
+  						score = "0"+score;
+  					}
+
+  					/* Przenoszenie nadmiarowe jedynki */
+  					if(memory[i+1]=="1"){
+  						if(score[0]=="0"){
+  							score = "1"+score.substring(1);
+  						} else {
+  							score = "0"+score.substring(1);
+  							memory[i]="1";
+  						}
+  					}
+  				};
+
+  				if(memory[0]=="1"){
+  					score="1"+score;
+  				}
+
+  				console.log(score, "memory ", memory);
+  				return score.toString(2);
+  			}
+  			function substraction(){
+  				return (bin1-bin2).toString(2);
+  			}
+
+  			function multiplication(){
+  				return (parseInt(bin1,2) * parseInt(bin2,2)).toString(2);
+  			}
+
+  			function dec2Bin(dec)
+  			{
+  				if(dec >= 0) {
+  					return dec.toString(2).substring(0,15);
+  				}
+  				else {
+  					return (~dec).toString(2).substring(0,15);
+  				}
+  			}
+
+  		/* 
+  			Zamiana na/z U2 
+  		*/
+  			function toFromU2(bin){
+  				var bin_u2="";
+  				for (var i = 0; i < bin.length; i++) {
+  					if(bin[i]=="1"){
+  						bin_u2+="0";
+  					} else {
+  						bin_u2+="1";
+  					}
+  				};
+  				var Binaries = normalize(bin_u2,"1");
+  				return addition(bin_u2);
+  			}
+
+  			function binReverse(array){
+  				var tmp = [];
+
+  				for (var i = 0; i < array.length; i++) {
+  					tmp[array.length-1-i] = array[i];
+  				};
+
+  				return tmp.join("");
+  			}
+
+  			/* 
+  				Normalizowanie ciągu binarnego do postaci 1-plus
+  			*/
+  			function toOnePlus(number){
+  				var point_pos = number.indexOf(".")+1;
+  				var first_one = number.indexOf("1")+1;
+
+  				var exp = point_pos-first_one; //Obliczanie wykładnika (położenie 'kropki' - położenie pierwszej '1')
+
+  				if(exp>=0){
+  					exp--;
+  				} else {
+  					first_one--;
+  				}
+
+  				var op_number = "1."+number.replace(".","").substring(first_one);
+  				op_number = { "val": op_number, "exp": exp};
+  				return op_number;
+  			}
+
+  			function toFloatingPointNumber(number, sign){
+  				number = number.toString();
+  				var op_number = toOnePlus(number);
+  				var bias = 15.0;
+  				var exp = binReverse(dec2Bin(parseFloat(op_number.exp)+bias).toString().substring(0,5));
+
+  				var fp_number = genZeros(16);
+
+  				//Dodanie bitu znaku
+  				if(sign){
+  					sign = "1";
+  				} else {
+  					sign = "0";
+  				}
+
+  				fp_number = sign+ genZeros(5-exp.length)+binReverse(exp) + op_number.val.substring(2) + genZeros(10-op_number.val.length+2);
+  				return fp_number;
+  			}
+  			
+  			/*
+  				Generowanie zadanej ilości zer
+  			 */
+  			function genZeros(number){
+  				var tmp = "";
+  				for (var i = 0; i < number; i++) {
+  					tmp += '0';
+  				};
+  				 return tmp;
+  			}
+
+
+
+  			$(function(){
+  				$( "#operation" ).change(function () {
+  					var selected = $( "#operation option:selected" ).text();
+  					var score_bin;
+  					switch(selected){
+  						case '+':
+  						score_bin = addition();
+  						break;
+  						case '-':
+  						score_bin = substraction();
+  						break;
+  						case '*':
+  						score_bin = multiplication();
+  						break;
+  					}
+  					$("#bin_wynik").text(score_bin.toString());
+  					$("#dec_wynik").text(typeof score_bin);
+
+  				});
+
+  			});
+  		</script>
+
+  	</body>
+
+  	</html>
