@@ -62,10 +62,8 @@
 				document.getElementById("base102").value = "11";
 				convert();
 
-				var bin1;
-				var bin2;
-				var dec1;
-				var dec2;
+				var bin1, bin2, dec1, dec2;
+				var signBinaries;
 
 				function convert(){
 					dec1 = parseFloat(document.getElementById("base10").value);
@@ -89,59 +87,45 @@
 					first = parseFloat(first);
 					second = parseFloat(second);
 					var Binaries = normalize(bin1,bin2);
-
 					var sign; 
-					var u2;
+					var u2 = false;
 
 					if(operation=="-"){
 						second = (-1)*second;
+						operation = "+";
 					}
 
-					if(first<0){
-						Binaries.first = toFromU2(Binaries.first);
-						console.log("pierwsza",Binaries.first)
+					if(first<0 || second<0){
+						if(first<0)
+							Binaries.first = toFromU2(Binaries.first);
+
+						if(second<0)
+							Binaries.second= toFromU2(Binaries.second);
+
 						u2=true;
 					}
-					if(second<0){
-						Binaries.second= toFromU2(Binaries.second);
-						console.log("druga", Binaries.second)
-						u2=true;
-					}
-					console.log(second);
-					if(first >= 0 && second >= 0 && (operation=="+" || operation=="*" || operation=="-")){	
-						sign = true;
-					} else if (first < 0 && second < 0 && (operation=="+" || operation=="*")) {
-						if(operation=="*")
-							sign=true;
-						if(operation=="+")
-							sign=false;
-					} else if(first >= 0 && second < 0 && (operation=="+" || operation=="*")){
-						if(operation=="*")
-							sign=false;
-						if(operation=="+"){
-							if(Math.abs(second)>first){
-								sign = false;
-							} else {
-								sign = true;
-							}
-						}
-					} else if(first < 0 && second >= 0 && (operation=="+" || operation=="*")){
-						if(operation=="*")
-							sign=false;
-						if(operation=="+"){
-							if(Math.abs(first)>second){
-								sign = false;
-							} else {
-								sign = true;
-							}
-						}
+					var score;
+					if(operation=="+"){
+						score = first+second;
+						console.log(score);
+					} else if(operation=="*"){
+						score = first*second;
 					}
 
-					return { sign: sign, binaries: Binaries, isU2: u2};
+					if(score>=0){
+						sign=true;
+					} else {
+						sign=false;
+					}
+
+					console.log("Wykonywane działanie to: ", operation, "; Pierwsza liczba: ", first, "; Druga liczba: ", second, "Konwersja U2: ", u2);
+					signBinaries = sign;
+					return { binaries: Binaries, isU2: u2};
 				}
 
-				function addition(Binaries){
-					var sign = Binaries.sign;
+				function addition(signB, Binaries){
+					console.log(Binaries)
+					var sign = signB;
 					var isU2 = Binaries.isU2;
 					Binaries = Binaries.binaries;
 
@@ -153,10 +137,7 @@
 					};
 
 					for (var i = Binaries.size-1; i >= 0; i--) {
-						if(Binaries.first[i]=="."){
-							score = "."+score;
-							continue;
-						}
+
 						if((Binaries.first[i]=="1" && Binaries.second[i]=="1")){
 							memory[i]="1";
 							score = "0"+score;
@@ -164,6 +145,14 @@
 							score = "1"+score;
 						} else if(Binaries.first[i]=="0" && Binaries.second[i]=="0"){
 							score = "0"+score;
+						}
+
+						if(Binaries.first[i]=="."){
+							score = "."+score;
+							if(memory[i+1]=="1"){
+								memory[i]="1";
+							}
+							continue;
 						}
 
 						if(memory[i+1]=="1"){
@@ -175,48 +164,53 @@
 							}
 						}
 					};
-					if(!isU2)
-					if(memory[0]=="1"){
+
+					if(memory[0]=="1" && isU2==false){
 						score = "1"+score;
 					}
+
 					if(sign==false){
 						score = toFromU2(score);
 					} 
-
 					return score.toString(2);
 				}
 
 
-				function multiplication(Binaries){
-					var sign = Binaries.sign;
+				function multiplication(signB, Binaries){
+					var sign = signB;
 					var isU2 = Binaries.isU2;
 					Binaries = Binaries.binaries;
-					console.log(sign);
 					var memory = [];
 					var counter = 0;
+					var dot_index = (Binaries.size - Binaries.first.indexOf("."));
+
+					Binaries.first = Binaries.first.replace(".","");
+					Binaries.second = Binaries.second.replace(".","");
+					console.log(Binaries.first, Binaries.second)
 
 					for (var i = Binaries.size-1; i >= 0; i--) {
-					var score = "";
+						var score = "";
 						for (var j = Binaries.size-1; j >= 0; j--) {
-							if(Binaries)
 							if(Binaries.second[i] == 1 && Binaries.first[j] == 1){
 								score = "1"+score;
 							} else {
 								score = "0"+score;
 							}
 						};
-						memory[counter]=(score+genZeros(counter));
+						memory[counter]=(score.substring(0)+genZeros(counter-1));
+												console.log(memory[counter])
 						counter++;
-
-
 					};
 					for (var i = 0; i < memory.length-1; i++) {
-						var Bin = {sign: true, binaries: normalize(memory[i],memory[i+1]), isU2: isU2};
-							memory[i+1] = addition(Bin);
+						var Bin = { binaries: normalize(memory[i],memory[i+1]), isU2: isU2};
+						memory[i+1] = addition(true, Bin);
 
 					};
 
-					return memory[memory.length-1].toString(2);
+					var wynik = memory[memory.length-1];
+					wynik = wynik.replace(".","");
+					wynik = wynik.substring(0,wynik.length - dot_index*2)+"."+wynik.substring(wynik.length - dot_index*2);
+					return wynik;
 				}
 
 				function dec2Bin(dec){
@@ -224,20 +218,27 @@
 						return dec.toString(2).substring(0,15);
 					} else {
 						return "-"+(Math.abs(dec)).toString(2).substring(0,15);
+							//return (parseFloat(dec)+32).toString(2).substring(0,15);
+						}
 					}
-				}
 
+				//ok
 				function normalize(first, second){
 					var tmp1 = first.toString(2);
 					var tmp2 = second.toString(2);
 
-					var size;
 					var numZero1 = tmp1.length - tmp1.indexOf(".");
-					var numZero2 = tmp2.length - tmp2.indexOf(".");
+					var size;
 
+					if(tmp1.indexOf(".")>-1 && tmp2 == "1"){
+						tmp2 = "0."+genZeros(numZero1-2)+"1";
+					}
+
+					numZero1 = tmp1.length - tmp1.indexOf(".");
+					var numZero2 = tmp2.length - tmp2.indexOf(".");
 					if(tmp1.indexOf(".")>-1){
 						if(tmp2.indexOf(".")>-1){
-							if(numZero1>=numZero2){
+							if(numZero1>numZero2){
 								tmp2 += genZeros(numZero1-numZero2);
 							} else {
 								tmp1 += genZeros(numZero2-numZero1);
@@ -248,29 +249,29 @@
 					} else {
 						if(tmp2.indexOf(".")>-1){
 							tmp1 += "."+genZeros(numZero2-1);
+						} else {
+							tmp1 += ".0";
+							tmp2 += ".0"
 						}
-
 					}
-					if(tmp1.length>=tmp2.length){
-						size = tmp1.length;
-						var zerosN = Math.abs(tmp1.length-tmp2.length);
-						for (var i = 0; i < zerosN; i++) {
-							tmp2 = "0"+tmp2;
-						};
-					} else {
+					size = tmp1.length;
+					if(tmp1.length > tmp2.length){
+						tmp2 = genZeros(tmp1.length - tmp2.length) + tmp2;
+					} else if (tmp2.length > tmp1.length){
+						tmp1 = genZeros(tmp2.length - tmp1.length) +tmp1;
 						size = tmp2.length;
-						var zerosN = Math.abs(tmp1.length-tmp2.length);
-						for (var i = 0; i < zerosN; i++) {
-							tmp1 = "0"+tmp1;
-						};
 					}
-					var Binaries = { size: size, first: tmp1, second: tmp2 };
+
+
+
+					var Binaries = { size: size , first: tmp1, second: tmp2 };
 					console.log("Po normalizacji", Binaries);
 					return Binaries;
 				}
 
+				//ok
 				function toFromU2(bin){
-					console.log("w u2",bin)
+					console.log("Przed zastosowaniem konwersji U2: ",bin);
 					var bin_u2="";
 					for (var i = 0; i < bin.length; i++) {
 						if(bin[i]=="1"){
@@ -282,10 +283,12 @@
 						}
 					};
 					var Binaries = normalize(bin_u2,"1");
-					Binaries = {sign: true, binaries: Binaries};
-					return addition(Binaries);
+					console.log("Po zastosowaniu konwersji U2: ",Binaries.first, Binaries.second);
+					Binaries = {binaries: Binaries, isU2: true};
+					return addition(true, Binaries);
 				}
 
+				//ok
 				function binReverse(array){
 					var tmp = [];
 
@@ -296,6 +299,7 @@
 					return tmp.join("");
 				}
 
+				//ok
 				function toOnePlus(number){
 					var point_pos = number.indexOf(".")+1;
 					var first_one = number.indexOf("1")+1;
@@ -309,12 +313,17 @@
 					}
 
 					var op_number = "1."+number.replace(".","").substring(first_one);
+					if(number.indexOf("1")==-1){
+						op_number = "0";
+					}
 					op_number = { "val": op_number, "exp": exp};
 					return op_number;
 				}
 
+				//ok?
 				function toFloatingPointNumber(number, sign){
-					number = number.toString();
+					number = number.toString(2);
+					console.log("Przed konwersją do zmiennoprzecin.: ", number)
 					var op_number = toOnePlus(number);
 					var bias = 15.0;
 					var exp = binReverse(dec2Bin(parseFloat(op_number.exp)+bias).toString().substring(0,5));
@@ -329,9 +338,14 @@
 					}
 
 					fp_number = sign+ genZeros(5-exp.length)+binReverse(exp) + op_number.val.substring(2) + genZeros(10-op_number.val.length+2);
+					console.log("Wartośc op_number", op_number);
+					if(op_number.val=="0"){
+						fp_number = "0."+genZeros(15);
+					}
 					return fp_number;
 				}
 				
+				//ok
 				function genZeros(number){
 					var tmp = "";
 					for (var i = 0; i < number; i++) {
@@ -349,17 +363,18 @@
 						var score_bin;
 						switch(selected){
 							case '+':
-							score_bin = addition(Binaries);
+							score_bin = addition(signBinaries, Binaries);
 							break;
 							case '-':
-							score_bin = addition(Binaries);
+							score_bin = addition(signBinaries, Binaries);
 							break;
 							case '*':
-							score_bin = multiplication(Binaries);
+							score_bin = multiplication(signBinaries, Binaries);
 							break;
 						}
-						$("#bin_wynik").text(toFloatingPointNumber(score_bin, Binaries.sign));
-						$("#dec_wynik").text(parseFloat(score_bin));
+						console.log("---------------------------------");
+						$("#bin_wynik").text(toFloatingPointNumber(score_bin, signBinaries));
+						$("#dec_wynik").text(score_bin);
 
 					});
 
